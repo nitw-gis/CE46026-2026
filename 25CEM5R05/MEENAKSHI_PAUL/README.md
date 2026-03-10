@@ -1,0 +1,16 @@
+$ conda create -n nisar python = 3.13
+$ conda activate nisar
+conda create -n nisar python=3.13
+conda install gdal -c conda-forge
+pip install polsartools
+python
+import polsartools as pst
+
+def main():
+
+    inFile = r"D:\GEOINFORMATICS\TMHRS\BACKSCATTER IMAGE\NISAR_L2_PR_GSLC_003_005_D_077_4005_DHDH_A_20251017T132451_20251017T132526_X05007_N_F_J_001.h5"
+
+    pst.import_nisar_gslc(inFile, azlks=20, rglks=10)
+
+if __name__ == "__main__":
+    main()
