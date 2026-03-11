@@ -124,6 +124,12 @@ Each pixel produces a unique spectral signature.
 
 The script generates a **spectral curve plot** showing radiance variation across wavelengths for selected pixels.
 
+<img width="1028" height="618" alt="image" src="https://github.com/user-attachments/assets/d7028595-e1b6-4629-b578-d2faa21c02a4" />
+<p align="center">
+ <em>Figure 1:Chandrayaan-2 IIRS Spectral Curve</em>
+ </p>
+
+
 The plot helps visualize:
 
 * spectral patterns
