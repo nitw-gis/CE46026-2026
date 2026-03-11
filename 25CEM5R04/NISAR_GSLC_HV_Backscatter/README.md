@@ -207,7 +207,7 @@ This makes the file compatible with GIS software such as:
 
 # Output
 
-<img width="940" height="664" alt="image" src="https://github.com/user-attachments/assets/c9088fab-b167-48b1-b628-ea2c292e8901" />
+<img width="940" height="664" alt="image" src="https://github.com/user-attachments/assets/c9088fab-b167-48b1-b628-ea2c292e8901" width="600"/>
 <p align="center" >
   <em>Figure 1:NISAR GSLC HV Backscatter image</em>
 </p>
