@@ -81,3 +81,31 @@ plt.xlabel("Pixels")
 plt.ylabel("Pixels")
 
 plt.show()
+
+
+# reduce size for memory
+data = data[::10, ::10]
+
+# read coordinates
+x = f['science/LSAR/GCOV/grids/frequencyA/xCoordinates'][:]
+y = f['science/LSAR/GCOV/grids/frequencyA/yCoordinates'][:]
+
+xmin, xmax = x.min(), x.max()
+ymin, ymax = y.min(), y.max()
+
+transform = from_bounds(xmin, ymin, xmax, ymax, data.shape[1], data.shape[0])
+
+# export GeoTIFF (without CRS to avoid error)
+with rasterio.open(
+    "nisar3_backscatter.tif",
+    "w",
+    driver="GTiff",
+    height=data.shape[0],
+    width=data.shape[1],
+    count=1,
+    dtype=data.dtype,
+    transform=transform,
+) as dst:
+    dst.write(data,1)
+
+print("GeoTIFF created")
