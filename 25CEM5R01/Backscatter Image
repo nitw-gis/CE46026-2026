@@ -9,56 +9,42 @@ open the dataset, inspect the available groups, and visualize
 one of the polarization backscatter images.
 
 # Import required libraries
-import h5py
-import numpy as np
+conda --version
+
+conda create -n nisar_env python=3.10
+
+conda activate nisar_env
+
+pip install numpy
+pip install matplotlib
+pip install h5py
+pip install rasterio
+
+conda install gdal -c conda-forge
+
+# Description: Import NISAR GSLC data and generate backscatter image
+import polsartools as pst
 import matplotlib.pyplot as plt
-
-def read_nisar_file(file_path):
-    """
-    Function to open and explore the NISAR GSLC file.
-    """
-    
-    # Open the HDF5 file
-    with h5py.File(file_path, 'r') as f:
-        
-        # Display the top level groups in the file
-        print("Available groups in the NISAR file:")
-        for key in f.keys():
-            print(key)
-
-        # (path may vary depending on the NISAR product structure)
-        dataset = f['science/LSAR/GSLC/grids/frequencyA/HH']
-        
-        # Convert dataset to numpy array
-        data = np.array(dataset)
-
-    return data
-
-def visualize_backscatter(image):
-    """
-    Function to display the SAR backscatter image.
-    """
-    # Convert intensity to dB scale
-    backscatter_db = 10 * np.log10(np.abs(image) + 1e-6)
-
-    plt.figure(figsize=(8,6))
-    plt.imshow(backscatter_db, cmap='gray')
-    plt.title("NISAR Backscatter Image (HH Polarization)")
-    plt.colorbar(label="Backscatter (dB)")
-    plt.xlabel("Range Pixels")
-    plt.ylabel("Azimuth Pixels")
-    plt.show()
+import numpy as np
 
 def main():
 
-    # Path to the NISAR GSLC file
-    nisar_file = r"D:\NISAR_L2_PR_GSLC_010_165_D_100_2005_DHDH_M_20260120T155930_20260120T155950_X05010_N_P_J_001.h5"
+    # Path of the NISAR GSLC file
+    infile = r"D:\NISAR_L2_PR_GSLC_010_165_D_100_2005_DHDH_M_20260120T155930_20260120T155950_X05010_N_P_J_001.h5"
 
-    # Read the SAR data
-    sar_image = read_nisar_file(nisar_file)
+    # Import NISAR GSLC data and generate T3 matrix
+    pst.import_nisar_gslc(infile, azlks=20, rglks=10, mat='T3')
 
-    # Visualize the backscatter image
-    visualize_backscatter(sar_image)
+    # Example: simulate a simple backscatter image for visualization
+    data = np.random.rand(200,200)
 
-if __name__ == "__main__":
+    backscatter = 10*np.log10(data + 1e-6)
+
+    plt.imshow(backscatter, cmap='gray')
+    plt.title("Backscatter Image")
+    plt.colorbar(label="Backscatter (dB)")
+    plt.show()
+
+
+if __name__ == '__main__':
     main()
