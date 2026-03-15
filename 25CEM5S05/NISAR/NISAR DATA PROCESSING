@@ -1,0 +1,208 @@
+# ============================================
+# IMPORT LIBRARIES
+# ============================================
+
+import h5py
+import numpy as np
+import rasterio
+from rasterio.transform import from_origin
+from rasterio.windows import Window
+from scipy.ndimage import uniform_filter
+
+
+# ============================================
+# INPUT / OUTPUT FILES
+# ============================================
+
+input_file = r"C:\Users\asus\Downloads\NISAR_L2_PR_GSLC_005_156_A_008_4005_DHDH_A_20251121T000828_20251121T000843_X05009_N_P_J_001.h5"
+
+output_file = r"C:\Users\asus\Downloads\NISAR_GSLC_HH_processed.tif"
+
+frequency = "frequencyA"
+polarization = "HH"
+
+block_size = 256
+
+
+# ============================================
+# OPEN HDF5 FILE
+# ============================================
+
+with h5py.File(input_file, "r") as f:
+
+    dataset_path = f"/science/LSAR/GSLC/grids/{frequency}/{polarization}"
+    dset = f[dataset_path]
+
+    rows, cols = dset.shape
+
+    print("Image size:", rows, "x", cols)
+    print("Dataset dtype:", dset.dtype)
+
+
+# ============================================
+# READ COORDINATES
+# ============================================
+
+    x_coords = f[f"/science/LSAR/GSLC/grids/{frequency}/xCoordinates"][:]
+    y_coords = f[f"/science/LSAR/GSLC/grids/{frequency}/yCoordinates"][:]
+
+    pixel_size_x = abs(x_coords[1] - x_coords[0])
+    pixel_size_y = abs(y_coords[1] - y_coords[0])
+
+    transform = from_origin(
+        x_coords.min(),
+        y_coords.max(),
+        pixel_size_x,
+        pixel_size_y
+    )
+
+
+# ============================================
+# CRS EXTRACTION
+# ============================================
+
+    projection_group = f[f"/science/LSAR/GSLC/grids/{frequency}/projection"]
+
+    epsg_code = projection_group.attrs.get("epsgCode")
+
+    crs = None
+
+    if epsg_code is not None:
+        try:
+            crs = rasterio.crs.CRS.from_epsg(int(epsg_code))
+        except:
+            pass
+
+    if crs is None:
+
+        wkt = projection_group.attrs.get("spatial_ref")
+
+        if wkt is None:
+            wkt = projection_group.attrs.get("crsWkt")
+
+        if wkt is not None:
+
+            if isinstance(wkt, bytes):
+                wkt = wkt.decode("utf-8")
+
+            elif isinstance(wkt, np.ndarray):
+                wkt = wkt.tobytes().decode("utf-8")
+
+            elif not isinstance(wkt, str):
+                wkt = str(wkt)
+
+            crs = rasterio.crs.CRS.from_wkt(wkt)
+
+    if crs is None:
+        raise ValueError("CRS information could not be determined.")
+
+    print("Detected CRS:", crs)
+
+
+# ============================================
+# CREATE OUTPUT GEOTIFF (BIGTIFF ENABLED)
+# ============================================
+
+    with rasterio.open(
+        output_file,
+        "w",
+        driver="GTiff",
+        height=rows,
+        width=cols,
+        count=1,
+        dtype="float32",
+        crs=crs,
+        transform=transform,
+        compress="lzw",
+        tiled=True,
+        blockxsize=256,
+        blockysize=256,
+        BIGTIFF="YES"
+    ) as dst:
+
+
+# ============================================
+# PROCESS IMAGE IN BLOCKS
+# ============================================
+
+        for row in range(0, rows, block_size):
+
+            for col in range(0, cols, block_size):
+
+                row_end = min(row + block_size, rows)
+                col_end = min(col + block_size, cols)
+
+
+# --------------------------------------------
+# READ BLOCK
+# --------------------------------------------
+
+                block = dset[row:row_end, col:col_end]
+
+                block = block.astype(np.complex64)
+
+
+# --------------------------------------------
+# COMPLEX → POWER
+# --------------------------------------------
+
+                power = np.abs(block) ** 2
+
+
+# --------------------------------------------
+# SPECKLE FILTER
+# --------------------------------------------
+
+                filtered_power = uniform_filter(power, size=5)
+
+
+# --------------------------------------------
+# SAFE LOG CONVERSION
+# --------------------------------------------
+
+                filtered_power[filtered_power <= 0] = 1e-10
+
+                power_db = 10 * np.log10(filtered_power)
+
+
+# --------------------------------------------
+# REMOVE NaN / INF
+# --------------------------------------------
+
+                power_db = np.nan_to_num(
+                    power_db,
+                    nan=-9999,
+                    posinf=-9999,
+                    neginf=-9999
+                )
+
+
+# --------------------------------------------
+# WRITE WINDOW
+# --------------------------------------------
+
+                window = Window(
+                    col,
+                    row,
+                    col_end - col,
+                    row_end - row
+                )
+
+                dst.write(
+                    power_db.astype("float32"),
+                    1,
+                    window=window
+                )
+
+                print(
+                    f"Processed rows {row}-{row_end}, cols {col}-{col_end}"
+                )
+
+
+# ============================================
+# FINISH
+# ============================================
+
+print("\nProcessing completed successfully.")
+print("Output saved at:")
+print(output_file)
