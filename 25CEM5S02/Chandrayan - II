@@ -1,0 +1,62 @@
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+
+# File paths
+
+hdr_path = r"D:\TMHRS\ch2_iir_nci_20231229T1353344194_d_img_d18\data\calibrated\20231229\ch2_iir_nci_20231229T1353344194_d_img_d18.hdr"
+qub_path = r"D:\TMHRS\ch2_iir_nci_20231229T1353344194_d_img_d18\data\calibrated\20231229\ch2_iir_nci_20231229T1353344194_d_img_d18.qub"
+
+# Open the IIRS data cube
+
+with rasterio.open(qub_path) as dataset:
+    bands = dataset.count
+    rows = dataset.height
+    cols = dataset.width
+
+    print(f"Number of Bands: {bands}")
+    print(f"Image Size: {rows} x {cols}")
+
+    # Read entire cube (bands, rows, cols)
+    cube = dataset.read()
+
+# Randomly select 3 pixel locations
+
+num_points = 3
+points = []
+
+for i in range(num_points):
+    row = random.randint(0, rows - 1)
+    col = random.randint(0, cols - 1)
+    points.append((row, col))
+
+# Extract spectral profiles
+
+spectra = []
+
+for (r, c) in points:
+    spectral_curve = cube[:, r, c]   # all bands at pixel (r, c)
+    spectra.append(spectral_curve)
+
+band_numbers = np.arange(1, bands + 1)
+
+# Plot spectral response curves
+
+plt.figure(figsize=(10, 6))
+
+for i, spectrum in enumerate(spectra):
+    plt.plot(
+        band_numbers,
+        spectrum,
+        linewidth=2,
+        label=f"Point {i+1} (Row={points[i][0]}, Col={points[i][1]})"
+    )
+
+plt.xlabel("Band Number", fontsize=12)
+plt.ylabel("Reflectance", fontsize=12)
+plt.title("Chandrayaan-2 IIRS Spectral Response Curves", fontsize=14)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
