@@ -1,0 +1,78 @@
+from spectral import envi
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+# FILE PATHS (EDIT ONLY IF LOCATION CHANGES)
+hdr_path = r "D:\THMRS\New
+folder\ch2_iir_nci_20200623T0853423542_d_img_d18\data\calibrated\20200623\ch2_iir_nci
+_20200623T0853423542_d_img_d18.hdr"
+qub_path = r "D:\THMRS\New
+folder\ch2_iir_nci_20200623T0853423542_d_img_d18\data\calibrated\20200623\ch2_iir_nci
+_20200623T0853423542_d_img_d18.qub"
+# FILE CHECK
+if not os.path.exists(hdr_path):
+raise FileNotFoundError("HDR file not found")
+
+if not os.path.exists(qub_path):
+raise FileNotFoundError("QUB file not found")
+# LOAD ENVI CUBE
+img = envi.open(hdr_path, qub_path)
+cube = np.array(img.load())
+print("Cube shape (lines, samples, bands):", cube.shape)
+# FIND FIRST VALID PIXEL
+row = None
+col = None
+for r in range(0, cube.shape[0], 50):
+for c in range(0, cube.shape[1], 10):
+spectrum = cube[r, c, :]
+if np.nanmax(spectrum) > 0:
+row, col = r, c
+break
+if row is not None:
+break
+if row is None:
+raise RuntimeError("No valid pixel found")
+
+print(f"Using pixel: row={row}, col={col}")
+
+# SINGLE PIXEL SPECTRUM
+spectrum = cube[row, col, :]
+bands = np.arange(spectrum.shape[0])
+
+plt.figure(figsize=(9, 5))
+plt.plot(bands, spectrum, linewidth=1.5)
+plt.xlabel("Band Number")
+plt.ylabel("Spectral Value (Radiance / DN)")
+plt.title("Chandrayaan-2 IIR Spectral Response (Single Pixel)")
+
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+# MULTIPLE PIXELS
+plt.figure(figsize=(9, 5))
+offsets = [(25,35), (153,170), (500,90)]
+for dr, dc in offsets:
+r = row + dr
+c = col + dc
+spec = cube[r, c, :]
+if np.nanmax(spec) > 0:
+plt.plot(bands, spec, label=f"({r},{c})")
+plt.xlabel("Band Number")
+plt.ylabel("Spectral Value (Radiance / DN)")
+plt.title("Spectral Response of Multiple Valid Pixels")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+# ROI MEAN (BEST PRACTICE)
+roi = cube[row:row+40, col:col+20, :]
+roi_mean = np.nanmean(roi, axis=(0,1))
+plt.figure(figsize=(9, 5))
+plt.plot(bands, roi_mean, linewidth=2)
+plt.xlabel("Band Number")
+plt.ylabel("Spectral Value (Radiance / DN)")
+plt.title("Mean Spectral Response (ROI)")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+print("done")
