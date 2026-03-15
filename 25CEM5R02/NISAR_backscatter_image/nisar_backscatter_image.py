@@ -1,3 +1,5 @@
+#Author: GARNISHA SHREE S K 
+#ROLL NO: 25CEM5R02
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
