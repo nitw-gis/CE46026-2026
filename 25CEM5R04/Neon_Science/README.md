@@ -61,16 +61,20 @@ python neon.py
 ## Outputs
 
 ### 1. Reflectance Band Image
-- Visualization of a single spectral band (Band 56)
 
-![Band Image](images/band56.png)
+<p align="center">
+  <img src="images/band56.png" width="500"><br>
+  <em>Figure 1: Reflectance of Band 56</em>
+</p>
 
 ---
 
 ### 2. Spectral Signature Plot
-- Reflectance vs Wavelength graph for a selected pixel
 
-<img src="images/spectral_plot.png" width="500">
+<p align="center">
+  <img src="images/spectral_plot.png" width="500"><br>
+  <em>Figure 2: Spectral signature (Reflectance vs Wavelength)</em>
+</p>
 
 ---
 
