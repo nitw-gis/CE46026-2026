@@ -195,6 +195,7 @@ interact(
 
 
 
+![png](Hypers_files/Hypers_6_0.png)
     <function __main__.show_pixel_spectrum(x, y)>
 
 
