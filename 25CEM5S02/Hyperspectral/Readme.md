@@ -56,6 +56,12 @@ Specific wavelength bands are selected:
 * Green channel → Red (~660 nm)
 * Blue channel → Green (~550 nm)
 
+#### 📈 Spectral Signature Curve
+Extract reflectance values across all wavelengths for a selected pixel
+Plot reflectance vs wavelength
+
+This helps in identifying material characteristics such as vegetation, soil, and water.
+
 ---
 
 ## 🖼️ Outputs
@@ -70,4 +76,6 @@ Specific wavelength bands are selected:
 
 ![FCC Output](outputs/fcc.png)
 
+### Spectral Signature Curve
 
+![FCC Output](outputs/curve.png)
