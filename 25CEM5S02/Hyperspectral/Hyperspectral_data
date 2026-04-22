@@ -1,0 +1,80 @@
+import h5py
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Updated file path
+file_path = r"D:\Ravichandra\NEON_refl-surf-dir-ortho-mosaic\NEON_refl-surf-dir-ortho-mosaic\NEON.D12.YELL.DP3.30006.001.2020-07.basic.20260422T135002Z.RELEASE-2026\NEON_D12_YELL_DP3_537000_4976000_reflectance.h5"
+
+# Load data
+with h5py.File(file_path, 'r') as f:
+    refl = f['YELL/Reflectance/Reflectance_Data'][:]
+    wavelengths = f['YELL/Reflectance/Metadata/Spectral_Data/Wavelength'][:]
+
+# Apply scale factor
+refl = refl / 10000.0
+
+# Function to find nearest band
+def find_band(target):
+    return np.argmin(np.abs(wavelengths - target))
+
+# ---------------------------
+# TRUE COLOR (RGB)
+# ---------------------------
+r = refl[:, :, find_band(660)]   # Red
+g = refl[:, :, find_band(550)]   # Green
+b = refl[:, :, find_band(470)]   # Blue
+
+rgb = np.stack([r, g, b], axis=2)
+
+# Normalize
+rgb = (rgb - np.min(rgb)) / (np.max(rgb) - np.min(rgb))
+
+plt.figure(figsize=(8, 6))
+plt.imshow(rgb)
+plt.title("True Color Composite (RGB)")
+plt.axis('off')
+plt.show()
+
+# ---------------------------
+# FALSE COLOR (NIR, Red, Green)
+# ---------------------------
+nir = refl[:, :, find_band(800)]  # Near Infrared
+red = refl[:, :, find_band(660)]
+green = refl[:, :, find_band(550)]
+
+false_color = np.stack([nir, red, green], axis=2)
+
+# Normalize
+false_color = (false_color - np.min(false_color)) / (np.max(false_color) - np.min(false_color))
+
+plt.figure(figsize=(8, 6))
+plt.imshow(false_color)
+plt.title("False Color Composite (NIR-Red-Green)")
+plt.axis('off')
+plt.show()
+
+# ---------------------------
+# SPECTRAL SIGNATURE CURVE
+# ---------------------------
+
+# Choose a pixel (you can change these values)
+pixel_x = 100
+pixel_y = 100
+
+spectrum = refl[pixel_y, pixel_x, :]
+
+plt.figure(figsize=(8, 5))
+plt.plot(wavelengths, spectrum, color='black')
+plt.xlabel("Wavelength (nm)")
+plt.ylabel("Reflectance")
+plt.title(f"Spectral Signature at Pixel ({pixel_x}, {pixel_y})")
+plt.grid()
+
+# Optional: highlight key bands
+plt.axvline(470, color='blue', linestyle='--', alpha=0.5, label='Blue')
+plt.axvline(550, color='green', linestyle='--', alpha=0.5, label='Green')
+plt.axvline(660, color='red', linestyle='--', alpha=0.5, label='Red')
+plt.axvline(800, color='purple', linestyle='--', alpha=0.5, label='NIR')
+
+plt.legend()
+plt.show()
