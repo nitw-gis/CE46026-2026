@@ -1,0 +1,63 @@
+Author: Atul Anand
+Roll Number: 25CEM5R01
+Course: Remote Sensing & Geoinformatics
+File Name: flood_detection_gee.js
+
+Description:
+This Google Earth Engine (GEE) script processes Sentinel-1 SAR data (VV polarization)
+to detect flood-affected areas within a specified region of interest.
+The script filters satellite imagery for pre-flood and post-flood periods,
+applies mosaicking and spatial clipping, and reduces noise using focal median filtering.
+It then computes the difference between the two time periods to identify potential flood
+zones based on a threshold. The detected flooded areas are visualized on the map,
+and their total extent is calculated using pixel area estimation. Finally,
+the flood map is exported to Google Drive for further analysis and reporting.
+
+Map.addLayer(table); 
+var sat = ee.ImageCollection("COPERNICUS/S1_GRD") 
+            .filterBounds(table) 
+            .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VV")) 
+            .select("VV") 
+
+var B_S = sat.filterDate("2020-09-25","2020-10-25").mosaic(); 
+var A_S = sat.filterDate("2020-10-05","2020-12-15").mosaic(); 
+
+var B = B_S.clip(table); 
+var A = A_S.clip(table);
+
+var B_smooth = B.focal_median(30,"circle","meters"); 
+var A_smooth = A.focal_median(30,"circle","meters"); 
+
+var diff = A_smooth.subtract(B_smooth); 
+
+var T = diff.lte(-3); 
+var flood = T.updateMask(T); 
+
+Map.addLayer(flood, {min:-30, max:0},"Flooded Area");
+
+Map.addLayer(diff, {min:-30, max:0},"Difference"); 
+Map.addLayer(B, {min:-30, max:0},"Before Flood"); 
+Map.addLayer(A, {min:-30, max:0},"After Flood");
+
+// Area Estimation 
+var pixelArea = ee.Image.pixelArea(); 
+var Flood_Area = pixelArea.updateMask(flood); 
+
+var flood_stat = Flood_Area.reduceRegion({ 
+reducer: ee.Reducer.sum(), 
+geometry:table, 
+scale:10, 
+maxPixels: 1e13 
+}); 
+
+print("Flooded Area in km2", ee.Number(flood_stat.get('area')).divide(1e6)); 
+
+// Export the image  
+Export.image.toDrive({ 
+image: flood, 
+description: 'Hyderabad_flood', 
+scale: 30, 
+region: table, 
+folder: 'flood', 
+maxPixels: 1e13, 
+}); 
